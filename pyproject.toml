@@ -1,0 +1,34 @@
+[project]
+name = "piphi-rtl433-bridge"
+version = "0.1.0"
+description = "Small bridge that forwards rtl_433 JSON packets into a PiPhi runtime ingest endpoint"
+authors = [
+    { name = "PiPhi Network" },
+]
+dependencies = [
+    "aiomqtt>=2.4,<3.0",
+    "click>=8.1.0",
+    "httpx>=0.27,<1.0",
+]
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "MIT" }
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.pdm]
+distribution = false
+
+[tool.pdm.scripts]
+bridge = "python -m piphi_rtl433_bridge"
+test = "pytest"
+
+[tool.setuptools.packages.find]
+where = ["src"]
