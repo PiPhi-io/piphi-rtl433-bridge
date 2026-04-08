@@ -61,6 +61,10 @@ def test_parse_extra_headers_returns_empty_dict_for_invalid_json() -> None:
     assert parse_extra_headers("{bad-json") == {}
 
 
+def test_parse_extra_headers_returns_empty_dict_for_non_object_json() -> None:
+    assert parse_extra_headers('["not", "an", "object"]') == {}
+
+
 def test_build_packet_topics_and_envelope() -> None:
     assert build_packets_topic("piphi/sources/rtl433") == "piphi/sources/rtl433/packets"
     assert (
@@ -77,3 +81,55 @@ def test_build_packet_topics_and_envelope() -> None:
     )
     assert envelope["source"] == "rtl433"
     assert envelope["device_hint"]["id"] == "42"
+
+
+def test_build_packet_envelope_uses_fallback_identity_fields() -> None:
+    envelope = build_packet_envelope(
+        {
+            "model": "WeatherSensor",
+            "device_id": "sensor-9",
+            "subtype": "A",
+        }
+    )
+
+    assert envelope["device_hint"]["id"] == "sensor-9"
+    assert envelope["device_hint"]["channel"] == "A"
+
+
+def test_build_model_packets_topic_sanitizes_slashes_and_spaces() -> None:
+    assert (
+        build_model_packets_topic("piphi/sources/rtl433", "Acurite / 5n1")
+        == "piphi/sources/rtl433/models/Acurite___5n1/packets"
+    )
+
+
+def test_build_bridge_config_trims_trailing_slash_from_topic_root() -> None:
+    config = build_bridge_config(
+        http_forward_enabled=True,
+        runtime_ingest_url="http://runtime.example/ingest/rtl433",
+        rtl433_command_text="rtl_433 -F json",
+        forward_timeout_seconds=10.0,
+        retry_delay_seconds=5.0,
+        startup_delay_seconds=1.0,
+        mqtt_enabled=True,
+        mqtt_topic_root="piphi/sources/rtl433///",
+    )
+
+    assert config.mqtt_topic_root == "piphi/sources/rtl433"
+
+
+def test_load_bridge_config_defaults_false_boolean_values(monkeypatch) -> None:
+    monkeypatch.setenv("HTTP_FORWARD_ENABLED", "off")
+    monkeypatch.setenv("MQTT_ENABLED", "no")
+
+    config = load_bridge_config()
+
+    assert config.http_forward_enabled is False
+    assert config.mqtt_enabled is False
+
+
+def test_build_packet_envelope_uses_none_when_identity_fields_missing() -> None:
+    envelope = build_packet_envelope({"model": "Unknown Sensor"})
+
+    assert envelope["device_hint"]["id"] is None
+    assert envelope["device_hint"]["channel"] is None
