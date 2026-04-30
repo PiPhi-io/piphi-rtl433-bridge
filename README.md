@@ -1,7 +1,7 @@
 # piphi-rtl433-bridge
 
-Small bridge process that runs `rtl_433`, reads decoded JSON packets, and
-forwards them to a PiPhi runtime such as `piphi-network-433mhz`.
+Small bridge process that runs `rtl_433`, reads decoded sub-GHz radio packets,
+and forwards them to a PiPhi runtime such as `piphi-network-433mhz`.
 
 ## Why this project exists
 
@@ -12,6 +12,7 @@ PiPhi still needs a tiny adapter layer that can:
 - run `rtl_433`
 - read one JSON packet at a time
 - forward packets to the runtime endpoint
+- support common receive bands such as 315 MHz, 433.92 MHz, 868 MHz, and 915 MHz
 - retry if the runtime is temporarily unavailable
 - keep the main runtime simpler and more beginner-friendly
 
@@ -35,8 +36,21 @@ multiple integrations can subscribe without fighting over the SDR device.
   Default: `http://127.0.0.1:8090/ingest/rtl433`
 - `HTTP_FORWARD_ENABLED`
   Default: `true`
+- `RADIO_BAND`
+  Default: `433mhz`
+  Friendly presets: `315mhz`, `433mhz`, `868mhz`, `915mhz`, `custom`
+- `CUSTOM_FREQUENCY`
+  Optional. Required only when `RADIO_BAND=custom`, for example `344.975M`
+- `RTLSDR_DEVICE`
+  Default: `auto`
+  USB receiver selector. Leave as `auto` unless multiple SDR receivers are attached.
+- `RECEIVER_GAIN`
+  Default: `auto`
+  Signal sensitivity. Leave as `auto` for normal use.
+- `RTL433_PROTOCOLS`
+  Optional comma-separated rtl_433 protocol IDs. Leave blank for automatic decoding.
 - `RTL433_COMMAND`
-  Default: `rtl_433 -F json`
+  Advanced override. If set, this raw command is used and the friendly radio options above are ignored.
 - `FORWARD_TIMEOUT_SECONDS`
   Default: `10`
 - `RETRY_DELAY_SECONDS`
@@ -93,9 +107,17 @@ Example custom run command:
 ```bash
 pdm run bridge run \
   --runtime-ingest-url "http://127.0.0.1:8090/ingest/rtl433" \
-  --rtl433-command "rtl_433 -F json -M time:unix" \
+  --radio-band 915mhz \
+  --receiver-gain auto \
   --header "X-PiPhi-Bridge=true" \
   --log-level DEBUG
+```
+
+Advanced raw `rtl_433` override:
+
+```bash
+pdm run bridge run \
+  --rtl433-command "rtl_433 -F json -M time:unix -f 433.92M"
 ```
 
 MQTT-only collector mode:
@@ -118,7 +140,7 @@ You can still use environment variables if you prefer:
 
 ```bash
 RUNTIME_INGEST_URL="http://127.0.0.1:8090/ingest/rtl433" \
-RTL433_COMMAND="rtl_433 -F json -M time:unix" \
+RADIO_BAND="915mhz" \
 pdm run bridge run
 ```
 

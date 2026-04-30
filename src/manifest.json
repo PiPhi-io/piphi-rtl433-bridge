@@ -1,0 +1,150 @@
+{
+  "manifest_version": "1.0",
+  "kind": "platform_service",
+  "id": "piphi.service.rtl433-bridge",
+  "name": "rtl_433 Radio Bridge",
+  "description": "Shared rtl_433 radio bridge for receiving sub-GHz sensor packets through PiPhi Core.",
+  "version": "0.1.0",
+  "image": "piphinetwork/rtl433-bridge:0.1.0",
+  "platforms": [
+    "linux"
+  ],
+  "runtime": {
+    "linux": {
+      "type": "container",
+      "container": {
+        "image": "piphinetwork/rtl433-bridge:0.1.0",
+        "network_mode": "host",
+        "privileged": true,
+        "devices": [
+          {
+            "host": "/dev/bus/usb",
+            "container": "/dev/bus/usb",
+            "permissions": "rwm"
+          }
+        ],
+        "environment": {
+          "RUNTIME_INGEST_URL": "http://127.0.0.1:8090/ingest/rtl433",
+          "HTTP_FORWARD_ENABLED": "true",
+          "RADIO_BAND": "433mhz",
+          "CUSTOM_FREQUENCY": "",
+          "RTLSDR_DEVICE": "auto",
+          "RECEIVER_GAIN": "auto",
+          "RTL433_PROTOCOLS": "",
+          "MQTT_ENABLED": "false"
+        },
+        "restart_policy": {
+          "name": "unless-stopped",
+          "maximum_retry_count": 0
+        }
+      }
+    }
+  },
+  "config": {
+    "schema": {
+      "type": "object",
+      "title": "Radio Bridge Setup",
+      "description": "Choose how PiPhi should listen for sub-GHz sensors. The defaults work for most 433 MHz sensors.",
+      "required": [
+        "radio_band"
+      ],
+      "properties": {
+        "radio_band": {
+          "type": "string",
+          "title": "Radio band",
+          "description": "Choose the band your sensors use. If you are not sure, start with 433.92 MHz.",
+          "default": "433mhz",
+          "enum": [
+            "315mhz",
+            "433mhz",
+            "868mhz",
+            "915mhz",
+            "custom"
+          ],
+          "enumNames": [
+            "315 MHz",
+            "433.92 MHz - most common",
+            "868 MHz",
+            "915 MHz",
+            "Custom frequency"
+          ]
+        },
+        "custom_frequency": {
+          "type": "string",
+          "title": "Custom frequency",
+          "description": "Only needed when Radio band is Custom. Use rtl_433 format such as 344.975M.",
+          "default": ""
+        },
+        "rtl_sdr_device": {
+          "type": "string",
+          "title": "USB receiver",
+          "description": "Leave as auto unless you have more than one SDR receiver plugged in.",
+          "default": "auto"
+        },
+        "receiver_gain": {
+          "type": "string",
+          "title": "Signal sensitivity",
+          "description": "Leave as auto for normal use. Increase only if reception is weak or unreliable.",
+          "default": "auto"
+        },
+        "rtl433_protocols": {
+          "type": "string",
+          "title": "Device type filter",
+          "description": "Optional. Leave blank to let rtl_433 identify supported devices automatically. Advanced users may enter comma-separated rtl_433 protocol IDs.",
+          "default": ""
+        },
+        "mqtt_enabled": {
+          "type": "boolean",
+          "title": "Share packets with MQTT",
+          "description": "Optional. Enable this only if another app should also receive decoded radio packets.",
+          "default": false
+        },
+        "rtl433_command": {
+          "type": "string",
+          "title": "Advanced command override",
+          "description": "Optional developer setting. If set, PiPhi uses this raw rtl_433 command and ignores the friendly radio options above.",
+          "default": ""
+        }
+      }
+    },
+    "uiSchema": {
+      "radio_band": {
+        "ui:placeholder": "433.92 MHz - most common"
+      },
+      "custom_frequency": {
+        "ui:placeholder": "344.975M"
+      },
+      "rtl_sdr_device": {
+        "ui:placeholder": "auto"
+      },
+      "receiver_gain": {
+        "ui:placeholder": "auto"
+      },
+      "rtl433_protocols": {
+        "ui:placeholder": "Leave blank for automatic decoding"
+      },
+      "rtl433_command": {
+        "ui:widget": "textarea"
+      }
+    }
+  },
+  "provides": {
+    "services": [
+      {
+        "id": "piphi.service.rtl433-bridge",
+        "kind": "platform_service",
+        "capabilities": [
+          "rtl433_packet_ingest",
+          "radio_bridge"
+        ],
+        "shared": true
+      }
+    ]
+  },
+  "exports": {
+    "env": {
+      "RTL433_BRIDGE_ENABLED": "true",
+      "RTL433_BRIDGE_RUNTIME_INGEST_URL": "http://127.0.0.1:8090/ingest/rtl433"
+    }
+  }
+}

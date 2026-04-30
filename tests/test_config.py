@@ -5,6 +5,8 @@ from piphi_rtl433_bridge.config import (
     build_packets_topic,
     load_bridge_config,
     parse_extra_headers,
+    parse_protocol_ids,
+    resolve_frequency,
 )
 
 
@@ -26,6 +28,44 @@ def test_load_bridge_config_parses_command_and_headers(monkeypatch) -> None:
     assert config.mqtt_enabled is True
     assert config.mqtt_hostname == "mqtt.test"
     assert config.mqtt_port == 1884
+
+
+def test_load_bridge_config_builds_friendly_default_rtl433_command(monkeypatch) -> None:
+    monkeypatch.delenv("RTL433_COMMAND", raising=False)
+
+    config = load_bridge_config()
+
+    assert config.radio_band == "433mhz"
+    assert config.frequency == "433.92M"
+    assert config.rtl433_command == ["rtl_433", "-F", "json", "-f", "433.92M"]
+
+
+def test_load_bridge_config_supports_915mhz_preset(monkeypatch) -> None:
+    monkeypatch.delenv("RTL433_COMMAND", raising=False)
+    monkeypatch.setenv("RADIO_BAND", "915mhz")
+    monkeypatch.setenv("RTLSDR_DEVICE", "1")
+    monkeypatch.setenv("RECEIVER_GAIN", "32.8")
+    monkeypatch.setenv("RTL433_PROTOCOLS", "40, 41")
+
+    config = load_bridge_config()
+
+    assert config.frequency == "915M"
+    assert config.protocol_ids == ("40", "41")
+    assert config.rtl433_command == [
+        "rtl_433",
+        "-F",
+        "json",
+        "-f",
+        "915M",
+        "-d",
+        "1",
+        "-g",
+        "32.8",
+        "-R",
+        "40",
+        "-R",
+        "41",
+    ]
 
 
 def test_build_bridge_config_uses_explicit_values() -> None:
@@ -55,6 +95,49 @@ def test_build_bridge_config_uses_explicit_values() -> None:
     assert config.mqtt_port == 2883
     assert config.mqtt_client_id == "bridge-1"
     assert config.mqtt_qos == 1
+
+
+def test_build_bridge_config_uses_custom_frequency() -> None:
+    config = build_bridge_config(
+        http_forward_enabled=True,
+        runtime_ingest_url="http://runtime.example/ingest/rtl433",
+        radio_band="custom",
+        custom_frequency="344.975M",
+        forward_timeout_seconds=10.0,
+        retry_delay_seconds=5.0,
+        startup_delay_seconds=1.0,
+    )
+
+    assert config.frequency == "344.975M"
+    assert config.rtl433_command == ["rtl_433", "-F", "json", "-f", "344.975M"]
+
+
+def test_raw_rtl433_command_override_wins_over_friendly_fields() -> None:
+    config = build_bridge_config(
+        http_forward_enabled=True,
+        runtime_ingest_url="http://runtime.example/ingest/rtl433",
+        radio_band="915mhz",
+        rtl433_command_text="rtl_433 -F json -M time:iso",
+        forward_timeout_seconds=10.0,
+        retry_delay_seconds=5.0,
+        startup_delay_seconds=1.0,
+    )
+
+    assert config.frequency == "915M"
+    assert config.rtl433_command == ["rtl_433", "-F", "json", "-M", "time:iso"]
+
+
+def test_custom_frequency_requires_value() -> None:
+    try:
+        resolve_frequency(radio_band="custom")
+    except ValueError as exc:
+        assert "CUSTOM_FREQUENCY" in str(exc)
+    else:
+        raise AssertionError("Expected custom frequency validation error")
+
+
+def test_parse_protocol_ids_accepts_commas_and_semicolons() -> None:
+    assert parse_protocol_ids("40, 41; 42") == ("40", "41", "42")
 
 
 def test_parse_extra_headers_returns_empty_dict_for_invalid_json() -> None:

@@ -52,6 +52,30 @@ def test_run_dry_run_prints_resolved_config() -> None:
     assert '"rtl433_command": [' in result.output
 
 
+def test_print_config_shows_friendly_radio_preset_command() -> None:
+    runner = CliRunner()
+
+    result = runner.invoke(
+        main,
+        [
+            "print-config",
+            "--radio-band",
+            "915mhz",
+            "--rtl-sdr-device",
+            "1",
+            "--receiver-gain",
+            "32.8",
+            "--rtl433-protocols",
+            "40,41",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert '"radio_band": "915mhz"' in result.output
+    assert '"frequency": "915M"' in result.output
+    assert '"-R"' in result.output
+
+
 def test_invalid_header_pair_returns_error() -> None:
     runner = CliRunner()
 

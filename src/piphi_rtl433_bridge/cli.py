@@ -10,6 +10,7 @@ import httpx
 
 from .bridge import Rtl433Bridge
 from .config import (
+    DEFAULT_RADIO_BAND,
     DEFAULT_MQTT_TOPIC_ROOT,
     DEFAULT_RTL433_COMMAND,
     DEFAULT_RUNTIME_INGEST_URL,
@@ -19,6 +20,10 @@ from .config import (
 
 LOG_LEVEL_CHOICES = click.Choice(
     ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"],
+    case_sensitive=False,
+)
+RADIO_BAND_CHOICES = click.Choice(
+    ["315mhz", "433mhz", "868mhz", "915mhz", "custom"],
     case_sensitive=False,
 )
 
@@ -40,11 +45,45 @@ def common_bridge_options(command):
             help="HTTP endpoint that accepts forwarded rtl_433 packets.",
         ),
         click.option(
+            "--radio-band",
+            envvar="RADIO_BAND",
+            default=DEFAULT_RADIO_BAND,
+            show_default=True,
+            type=RADIO_BAND_CHOICES,
+            help="Friendly radio band preset to listen on.",
+        ),
+        click.option(
+            "--custom-frequency",
+            envvar="CUSTOM_FREQUENCY",
+            default="",
+            help="Frequency to use when --radio-band custom is selected, for example 344.975M.",
+        ),
+        click.option(
+            "--rtl-sdr-device",
+            envvar="RTLSDR_DEVICE",
+            default="auto",
+            show_default=True,
+            help="USB receiver to use. Leave as auto unless you have multiple SDR receivers.",
+        ),
+        click.option(
+            "--receiver-gain",
+            envvar="RECEIVER_GAIN",
+            default="auto",
+            show_default=True,
+            help="Radio sensitivity. Leave as auto unless you are tuning reception.",
+        ),
+        click.option(
+            "--rtl433-protocols",
+            envvar="RTL433_PROTOCOLS",
+            default="",
+            help="Optional comma-separated rtl_433 protocol IDs to listen for. Leave blank for automatic decoding.",
+        ),
+        click.option(
             "--rtl433-command",
             envvar="RTL433_COMMAND",
             default=DEFAULT_RTL433_COMMAND,
             show_default=True,
-            help="Shell-style rtl_433 command string to execute.",
+            help="Advanced override: raw rtl_433 command string. If set, friendly radio options are ignored.",
         ),
         click.option(
             "--forward-timeout-seconds",
@@ -169,6 +208,11 @@ def main() -> None:
 def run_command(
     http_forward_enabled: bool,
     runtime_ingest_url: str,
+    radio_band: str,
+    custom_frequency: str,
+    rtl_sdr_device: str,
+    receiver_gain: str,
+    rtl433_protocols: str,
     rtl433_command: str,
     forward_timeout_seconds: float,
     retry_delay_seconds: float,
@@ -190,6 +234,11 @@ def run_command(
     config = _build_config_from_inputs(
         http_forward_enabled=http_forward_enabled,
         runtime_ingest_url=runtime_ingest_url,
+        radio_band=radio_band,
+        custom_frequency=custom_frequency,
+        rtl_sdr_device=rtl_sdr_device,
+        receiver_gain=receiver_gain,
+        rtl433_protocols=rtl433_protocols,
         rtl433_command=rtl433_command,
         forward_timeout_seconds=forward_timeout_seconds,
         retry_delay_seconds=retry_delay_seconds,
@@ -218,6 +267,11 @@ def run_command(
 def print_config_command(
     http_forward_enabled: bool,
     runtime_ingest_url: str,
+    radio_band: str,
+    custom_frequency: str,
+    rtl_sdr_device: str,
+    receiver_gain: str,
+    rtl433_protocols: str,
     rtl433_command: str,
     forward_timeout_seconds: float,
     retry_delay_seconds: float,
@@ -238,6 +292,11 @@ def print_config_command(
     config = _build_config_from_inputs(
         http_forward_enabled=http_forward_enabled,
         runtime_ingest_url=runtime_ingest_url,
+        radio_band=radio_band,
+        custom_frequency=custom_frequency,
+        rtl_sdr_device=rtl_sdr_device,
+        receiver_gain=receiver_gain,
+        rtl433_protocols=rtl433_protocols,
         rtl433_command=rtl433_command,
         forward_timeout_seconds=forward_timeout_seconds,
         retry_delay_seconds=retry_delay_seconds,
@@ -261,6 +320,11 @@ def print_config_command(
 def ping_runtime_command(
     http_forward_enabled: bool,
     runtime_ingest_url: str,
+    radio_band: str,
+    custom_frequency: str,
+    rtl_sdr_device: str,
+    receiver_gain: str,
+    rtl433_protocols: str,
     rtl433_command: str,
     forward_timeout_seconds: float,
     retry_delay_seconds: float,
@@ -281,6 +345,11 @@ def ping_runtime_command(
     config = _build_config_from_inputs(
         http_forward_enabled=http_forward_enabled,
         runtime_ingest_url=runtime_ingest_url,
+        radio_band=radio_band,
+        custom_frequency=custom_frequency,
+        rtl_sdr_device=rtl_sdr_device,
+        receiver_gain=receiver_gain,
+        rtl433_protocols=rtl433_protocols,
         rtl433_command=rtl433_command,
         forward_timeout_seconds=forward_timeout_seconds,
         retry_delay_seconds=retry_delay_seconds,
@@ -313,6 +382,11 @@ def _build_config_from_inputs(
     *,
     http_forward_enabled: bool,
     runtime_ingest_url: str,
+    radio_band: str,
+    custom_frequency: str,
+    rtl_sdr_device: str,
+    receiver_gain: str,
+    rtl433_protocols: str,
     rtl433_command: str,
     forward_timeout_seconds: float,
     retry_delay_seconds: float,
@@ -333,6 +407,11 @@ def _build_config_from_inputs(
     return build_bridge_config(
         http_forward_enabled=http_forward_enabled,
         runtime_ingest_url=runtime_ingest_url,
+        radio_band=radio_band,
+        custom_frequency=custom_frequency,
+        rtl_sdr_device=rtl_sdr_device,
+        receiver_gain=receiver_gain,
+        protocol_ids_text=rtl433_protocols,
         rtl433_command_text=rtl433_command,
         forward_timeout_seconds=forward_timeout_seconds,
         retry_delay_seconds=retry_delay_seconds,
@@ -391,6 +470,12 @@ def _config_to_dict(config: BridgeConfig) -> dict[str, Any]:
     return {
         "http_forward_enabled": config.http_forward_enabled,
         "runtime_ingest_url": config.runtime_ingest_url,
+        "radio_band": config.radio_band,
+        "frequency": config.frequency,
+        "rtl_sdr_device": config.rtl_sdr_device,
+        "receiver_gain": config.receiver_gain,
+        "protocol_ids": list(config.protocol_ids),
+        "raw_rtl433_command": config.raw_rtl433_command,
         "rtl433_command": config.rtl433_command,
         "forward_timeout_seconds": config.forward_timeout_seconds,
         "retry_delay_seconds": config.retry_delay_seconds,

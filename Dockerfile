@@ -3,7 +3,9 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     RUNTIME_INGEST_URL=http://127.0.0.1:8090/ingest/rtl433 \
-    RTL433_COMMAND="rtl_433 -F json"
+    RADIO_BAND=433mhz \
+    RTLSDR_DEVICE=auto \
+    RECEIVER_GAIN=auto
 
 WORKDIR /app
 
