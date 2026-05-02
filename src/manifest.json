@@ -4,8 +4,8 @@
   "id": "piphi.service.rtl433-bridge",
   "name": "rtl_433 Radio Bridge",
   "description": "Shared rtl_433 radio bridge for receiving sub-GHz sensor packets through PiPhi Core.",
-  "version": "0.1.0",
-  "image": "piphinetwork/rtl433-bridge:0.1.0",
+  "version": "0.1.1",
+  "image": "piphinetwork/rtl433-bridge:0.1.1",
   "platforms": [
     "linux"
   ],
@@ -13,7 +13,7 @@
     "linux": {
       "type": "container",
       "container": {
-        "image": "piphinetwork/rtl433-bridge:0.1.0",
+        "image": "piphinetwork/rtl433-bridge:0.1.1",
         "network_mode": "host",
         "privileged": true,
         "devices": [
