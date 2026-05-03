@@ -60,13 +60,6 @@
             "868mhz",
             "915mhz",
             "custom"
-          ],
-          "enumNames": [
-            "315 MHz",
-            "433.92 MHz - most common",
-            "868 MHz",
-            "915 MHz",
-            "Custom frequency"
           ]
         },
         "custom_frequency": {
@@ -75,7 +68,7 @@
           "description": "Only needed when Radio band is Custom. Use rtl_433 format such as 344.975M.",
           "default": ""
         },
-        "rtl_sdr_device": {
+        "rtlsdr_device": {
           "type": "string",
           "title": "USB receiver",
           "description": "Leave as auto unless you have more than one SDR receiver plugged in.",
@@ -108,23 +101,77 @@
       }
     },
     "uiSchema": {
+      "ui:options": {
+        "translations": {
+          "submit": "Start Runtime Service"
+        }
+      },
       "radio_band": {
-        "ui:placeholder": "433.92 MHz - most common"
+        "ui:components": {
+          "stringField": "enumField"
+        },
+        "ui:options": {
+          "enumNames": [
+            "315 MHz",
+            "433.92 MHz - most common",
+            "868 MHz",
+            "915 MHz",
+            "Custom frequency"
+          ]
+        }
       },
       "custom_frequency": {
-        "ui:placeholder": "344.975M"
+        "ui:options": {
+          "text": {
+            "placeholder": "344.975M"
+          },
+          "flowbite3Text": {
+            "placeholder": "344.975M"
+          }
+        }
       },
-      "rtl_sdr_device": {
-        "ui:placeholder": "auto"
+      "rtlsdr_device": {
+        "ui:options": {
+          "text": {
+            "placeholder": "auto"
+          },
+          "flowbite3Text": {
+            "placeholder": "auto"
+          }
+        }
       },
       "receiver_gain": {
-        "ui:placeholder": "auto"
+        "ui:options": {
+          "text": {
+            "placeholder": "auto"
+          },
+          "flowbite3Text": {
+            "placeholder": "auto"
+          }
+        }
       },
       "rtl433_protocols": {
-        "ui:placeholder": "Leave blank for automatic decoding"
+        "ui:options": {
+          "text": {
+            "placeholder": "Leave blank for automatic decoding"
+          },
+          "flowbite3Text": {
+            "placeholder": "Leave blank for automatic decoding"
+          }
+        }
       },
       "rtl433_command": {
-        "ui:widget": "textarea"
+        "ui:components": {
+          "textWidget": "textareaWidget"
+        },
+        "ui:options": {
+          "textarea": {
+            "rows": 3
+          },
+          "flowbite3Textarea": {
+            "rows": 3
+          }
+        }
       }
     }
   },
