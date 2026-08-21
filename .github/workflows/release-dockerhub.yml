@@ -152,11 +152,19 @@ jobs:
           set -euo pipefail
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
+      - name: Exchange Docker Hub OIDC token
+        if: ${{ env.DOCKERHUB_OIDC_CONNECTIONID != '' }}
+        id: docker_oidc
+        uses: docker/oidc-action@v1
+        with:
+          connection_id: ${{ env.DOCKERHUB_OIDC_CONNECTIONID }}
+
       - name: Log in to Docker Hub
         if: ${{ env.DOCKERHUB_OIDC_CONNECTIONID != '' }}
         uses: docker/login-action@v4.5.0
         with:
           username: piphinetwork
+          password: ${{ steps.docker_oidc.outputs.token }}
 
       - name: Require Docker Hub OIDC connection
         if: ${{ env.DOCKERHUB_OIDC_CONNECTIONID == '' }}
