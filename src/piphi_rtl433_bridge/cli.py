@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from importlib.metadata import PackageNotFoundError, version as package_version
 import json
 import logging
 from typing import Any
@@ -191,8 +192,14 @@ def common_bridge_options(command):
     return command
 
 
+try:
+    BRIDGE_VERSION = package_version("piphi-rtl433-bridge")
+except PackageNotFoundError:  # pragma: no cover - source checkout without an installed package
+    BRIDGE_VERSION = "0.0.0"
+
+
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
-@click.version_option(version="0.1.0", prog_name="piphi-rtl433-bridge")
+@click.version_option(version=BRIDGE_VERSION, prog_name="piphi-rtl433-bridge")
 def main() -> None:
     """Small rtl_433 helper for forwarding packets into a PiPhi runtime."""
 

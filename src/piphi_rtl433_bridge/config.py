@@ -133,6 +133,81 @@ def build_bridge_config(
     )
 
 
+def reconfigure_bridge_config(
+    config: BridgeConfig,
+    *,
+    frequency: str | None = None,
+    rtl_sdr_device: str | None = None,
+    receiver_gain: str | None = None,
+    protocol_ids_text: str | None = None,
+) -> BridgeConfig:
+    """Return a bridge config with discovery-time radio settings applied."""
+
+    selected_band = config.radio_band
+    selected_custom_frequency = config.frequency if config.radio_band == "custom" else ""
+    if frequency is not None and frequency.strip():
+        selected_band, selected_custom_frequency = parse_frequency_selection(frequency)
+
+    return build_bridge_config(
+        http_forward_enabled=config.http_forward_enabled,
+        runtime_ingest_url=config.runtime_ingest_url,
+        radio_band=selected_band,
+        custom_frequency=selected_custom_frequency,
+        rtl_sdr_device=rtl_sdr_device if rtl_sdr_device is not None else config.rtl_sdr_device,
+        receiver_gain=receiver_gain if receiver_gain is not None else config.receiver_gain,
+        protocol_ids_text=(
+            protocol_ids_text
+            if protocol_ids_text is not None
+            else ",".join(config.protocol_ids)
+        ),
+        # A discovery-time radio choice is explicit and must not be shadowed by an
+        # older advanced command override.
+        rtl433_command_text="" if frequency is not None else (config.raw_rtl433_command or ""),
+        forward_timeout_seconds=config.forward_timeout_seconds,
+        retry_delay_seconds=config.retry_delay_seconds,
+        startup_delay_seconds=config.startup_delay_seconds,
+        extra_headers=config.extra_headers,
+        mqtt_enabled=config.mqtt_enabled,
+        mqtt_hostname=config.mqtt_hostname,
+        mqtt_port=config.mqtt_port,
+        mqtt_username=config.mqtt_username,
+        mqtt_password=config.mqtt_password,
+        mqtt_client_id=config.mqtt_client_id,
+        mqtt_qos=config.mqtt_qos,
+        mqtt_topic_root=config.mqtt_topic_root,
+    )
+
+
+def parse_frequency_selection(value: str) -> tuple[str, str]:
+    """Accept a friendly band name or an rtl_433 custom frequency."""
+
+    selected = str(value or "").strip()
+    normalized = selected.lower().replace("_", "").replace("-", "")
+    preset_aliases = {
+        "315": "315mhz",
+        "315m": "315mhz",
+        "315mhz": "315mhz",
+        "433": "433mhz",
+        "433m": "433mhz",
+        "433mhz": "433mhz",
+        "43392": "433mhz",
+        "43392m": "433mhz",
+        "43392mhz": "433mhz",
+        "868": "868mhz",
+        "868m": "868mhz",
+        "868mhz": "868mhz",
+        "915": "915mhz",
+        "915m": "915mhz",
+        "915mhz": "915mhz",
+    }
+    preset = preset_aliases.get(normalized)
+    if preset:
+        return preset, ""
+    if not selected:
+        raise ValueError("Frequency cannot be blank.")
+    return "custom", selected
+
+
 def normalize_radio_band(value: str) -> str:
     normalized = str(value or "").strip().lower().replace("_", "").replace("-", "")
     if normalized in {"315", "315mhz", "315m"}:

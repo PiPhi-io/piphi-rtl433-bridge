@@ -5,7 +5,9 @@ from piphi_rtl433_bridge.config import (
     build_packets_topic,
     load_bridge_config,
     parse_extra_headers,
+    parse_frequency_selection,
     parse_protocol_ids,
+    reconfigure_bridge_config,
     resolve_frequency,
 )
 
@@ -110,6 +112,28 @@ def test_build_bridge_config_uses_custom_frequency() -> None:
 
     assert config.frequency == "344.975M"
     assert config.rtl433_command == ["rtl_433", "-F", "json", "-f", "344.975M"]
+
+
+def test_reconfigure_bridge_config_accepts_frequency_and_receiver() -> None:
+    config = load_bridge_config()
+
+    updated = reconfigure_bridge_config(
+        config,
+        frequency="915mhz",
+        rtl_sdr_device="1",
+        receiver_gain="32.8",
+        protocol_ids_text="40,41",
+    )
+
+    assert updated.frequency == "915M"
+    assert updated.rtl_sdr_device == "1"
+    assert updated.rtl433_command == [
+        "rtl_433", "-F", "json", "-f", "915M", "-d", "1", "-g", "32.8", "-R", "40", "-R", "41"
+    ]
+
+
+def test_parse_frequency_selection_treats_raw_frequency_as_custom() -> None:
+    assert parse_frequency_selection("344.975M") == ("custom", "344.975M")
 
 
 def test_raw_rtl433_command_override_wins_over_friendly_fields() -> None:

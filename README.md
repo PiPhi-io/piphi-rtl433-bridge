@@ -90,6 +90,17 @@ Run the bridge:
 pdm run bridge run
 ```
 
+Run the local service used by PiPhi discovery:
+
+```bash
+uvicorn piphi_rtl433_bridge.service:app --host 127.0.0.1 --port 8091
+```
+
+The service exposes `GET /health` and `POST /radio/config`. The configuration
+route accepts `frequency`, `rtlsdr_device`, `receiver_gain`, and
+`rtl433_protocols`, then safely restarts the managed `rtl_433` process. The
+container binds this API to loopback only.
+
 Print the resolved bridge config without starting anything:
 
 ```bash
