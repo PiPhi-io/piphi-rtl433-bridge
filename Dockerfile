@@ -24,4 +24,4 @@ COPY src /app/src
 RUN pip install --no-cache-dir .
 
 ENTRYPOINT ["tini", "--"]
-CMD ["uvicorn", "piphi_rtl433_bridge.service:app", "--host", "127.0.0.1", "--port", "8091"]
+CMD ["python", "-m", "piphi_rtl433_bridge.service"]
