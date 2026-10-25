@@ -114,3 +114,25 @@ def _public_config(config: BridgeConfig) -> dict[str, object]:
         "receiver_gain": config.receiver_gain,
         "rtl433_protocols": list(config.protocol_ids),
     }
+
+
+def runtime_port() -> int:
+    import os
+    raw_port = os.getenv("PORT")
+    try:
+        port = 8091 if raw_port is None else int(raw_port)
+    except ValueError as exc:
+        raise ValueError("PORT must be an integer between 1 and 65535") from exc
+    if not 1 <= port <= 65535:
+        raise ValueError("PORT must be an integer between 1 and 65535")
+    return port
+
+
+def main() -> None:
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=runtime_port())
+
+
+if __name__ == "__main__":
+    main()
